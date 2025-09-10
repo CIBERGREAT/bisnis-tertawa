@@ -1,6 +1,6 @@
 <?php
 // Ganti dengan API Key dari Paydisini
-$API_KEY = "API_KEY_KAMU_DISINI";
+$API_KEY = "b3326bb4bdd27c1a8b67361891f72867";
 
 // Ambil data dari request frontend
 $data = json_decode(file_get_contents("php://input"), true);
