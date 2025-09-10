@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Toko Saya - Paydisini + QRIS (Demo)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding: 24px; max-width: 960px; margin: auto; }
+    .product { border: 1px solid #eee; padding: 16px; border-radius: 8px; margin-bottom: 12px; display:flex; gap:16px; align-items:center; }
+    .thumb { width:120px; height:90px; background:#f3f3f3; display:flex; align-items:center; justify-content:center; color:#aaa; border-radius:6px; }
+    .info { flex:1; }
+    .buy { background:#0b74de; color:#fff; border:0; padding:10px 14px; border-radius:6px; cursor:pointer; }
+    .small { font-size:13px; color:#666; }
+    #status { margin-top:18px; }
+  </style>
+</head>
+<body>
+  <h1>Toko Demo — Bayar otomatis via Paydisini (QRIS)</h1>
+  <p class="small">Contoh ini memakai **hosted payment link** dari Paydisini. Untuk konfirmasi otomatis (webhook) Anda perlu menambahkan backend / serverless function.</p>
+
+  <!-- List produk sederhana -->
+  <div id="products">
+    <div class="product" data-id="P001" data-name="Kaos Keren" data-price="75000">
+      <div class="thumb">IMG</div>
+      <div class="info">
+        <strong>Kaos Keren</strong><br>
+        <span class="small">Harga: Rp 75.000</span>
+      </div>
+      <div>
+        <button class="buy" onclick="buyNow(this)">Beli</button>
+      </div>
+    </div>
+
+    <div class="product" data-id="P002" data-name="Mug Custom" data-price="45000">
+      <div class="thumb">IMG</div>
+      <div class="info">
+        <strong>Mug Custom</strong><br>
+        <span class="small">Harga: Rp 45.000</span>
+      </div>
+      <div>
+        <button class="buy" onclick="buyNow(this)">Beli</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    /********** PENTING: GANTI INI DENGAN DATA DARI PAYDISINI **********
+     * - Jika Paydisini menyediakan "hosted payment link" sederhana, kita bisa
+     *   membuka URL hosted itu (dengan parameter jumlah/order_id) agar pembeli
+     *   membayar (QRIS) di halaman Paydisini.
+     * - Contoh di bawah memakai pola URL contoh: https://payment.paydisini.co.id/v3/?order_id=XXX&amount=YYY
+     * - Anda HARUS menanyakan dokumentasi detail ke Paydisini (atau cek dashboard)
+     *   untuk format link yang benar, atau gunakan fitur "payment link" mereka.
+     ***************************************************************/
+
+    // KONFIGURASI (ganti sesuai akun Paydisini / petunjuk mereka)
+    const PAYDISINI_HOSTED_URL = "https://payment.paydisini.co.id/v3/"; // contoh; cek dashboard paydisini Anda
+    const MERCHANT_CODE = "MERCHANT123"; // OPTIONAL: jika perlu
+    const CALLBACK_AFTER_PAYMENT = "https://your-domain-or-page.com/payment-callback"; // opsional, Paydisini mungkin mendukung redirect setelah bayar
+
+    function formatRupiah(n) {
+      return new Intl.NumberFormat('id-ID').format(n);
+    }
+
+    function buyNow(btn) {
+      const item = btn.closest('.product');
+      const productId = item.getAttribute('data-id');
+      const name = item.getAttribute('data-name');
+      const price = Number(item.getAttribute('data-price'));
+
+      // Buat order id sederhana (client-side). Untuk production, order id sebaiknya dibuat dan disimpan di server.
+      const orderId = 'ORD-' + Date.now() + '-' + Math.floor(Math.random()*9000+1000);
+
+      // Tampilan sementara: info order
+      document.getElementById('status').innerHTML = `
+        <strong>Menyiapkan pembayaran untuk:</strong><br>
+        ${name} — Rp ${formatRupiah(price)}<br>
+        <small>Order ID: ${orderId}</small>
+      `;
+
+      /****************************************************************
+       * STRATEGI 1 (hosted link): buka hosted payment page Paydisini
+       *
+       * Banyak gateway menyediakan cara mudah: sebuah URL/checkout page
+       * yang menerima parameter (order_id, amount, return_url). Setelah
+       * pembeli menyelesaikan pembayaran (mis. QRIS), mereka bisa
+       * dikembalikan ke return_url (opsional).
+       *
+       * KODE DI BAWAH MEMBUKA HALAMAN HOSTED PAYMENT:
+       ****************************************************************/
+      const params = new URLSearchParams({
+        order_id: orderId,
+        amount: price,
+        // merchant: MERCHANT_CODE, // hapus/aktifkan sesuai kebutuhan gateway
+        return_url: CALLBACK_AFTER_PAYMENT
+      });
+
+      // buka hosted page di tab baru
+      const checkoutUrl = PAYDISINI_HOSTED_URL + '?' + params.toString();
+      window.open(checkoutUrl, '_blank');
+
+      /****************************************************************
+       * CATATAN:
+       * - Jika Paydisini punya fitur "payment link" atau tombol embed JS, gunakan
+       *   sesuai dokumentasi resmi mereka (lebih aman & mudah).
+       * - Untuk "auto-confirmation" (website Anda tandai order sebagai LUNAS otomatis),
+       *   Anda harus menerima webhook/notification dari Paydisini di server dan
+       *   memvalidasi signature. GitHub Pages TIDAK MENDUKUNG webhook secara server-side.
+       ****************************************************************/
+    }
+  </script>
+</body>
+</html>
